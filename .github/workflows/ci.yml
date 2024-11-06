@@ -1,0 +1,41 @@
+name: CI for Angular - Build and Headless e2e Testing
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run Angular build
+        run: npm run build --if-present
+
+      - name: Start Angular server
+        run: npm start &
+        env:
+          CYPRESS_BASE_URL: 'http://localhost:4200'
+
+      - name: Run Cypress e2e tests in headless mode
+        run: npx cypress run --headless
